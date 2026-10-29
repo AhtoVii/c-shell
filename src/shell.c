@@ -29,6 +29,11 @@ int launch(char **args) {
     } else {
         do {
             wpid = waitpid(pid, &status, WUNTRACED);
+            if (!wpid) {
+                perror("waitpid");
+                break;
+            }
+            
         } while (!(WIFEXITED(status)) && !(WIFSIGNALED(status)));
     }
 
