@@ -1,0 +1,67 @@
+Luo looppi (do while):
+    Tulosta syöte esim. ($ tai ->)
+    1. Lue rivi (read)
+    2. Pilko argumentit (parse)
+    3. Aja komento (execute)
+    4. Vapauta muisti (free)
+    5. Tarvittaessa uudestaan
+
+Lue syöte:
+    - Määritä bufferin maksimikoko (montako kirjainta siihen mahtuu) (1024)
+    - Varaa muisti (malloc)
+    - Tarkista mahdollinen muistin epäonnistunut varaus
+    - Jos epäonnistui poistu
+    * Looppi
+        - Lue yksittäinen kirjain getchar() ja tallenna muuttujaan (int muuttuja EOF varten)
+        - Tarkista saavutettiinko EOF tai uusi rivi
+            - Jos näin aseta null-terminaattori paikalle
+            - Palauta valmis merkkijono
+
+        - Muussa tapauksissa aseta kirjain indeksiin ja kasvata indeksinumeroa
+
+        * Bufferin muistin uudelleenvaraus
+            - Jos bufferin muisti loppuu varataan lisää tilaa
+            - Kerrotaan bufferin koko kahdella
+            - Kutsu realloc()
+
+            - Tarkista ettei varaus epäonnistunut (samalla tavalla kuin alussa)
+
+
+Pilko argumentit:
+    - Määritä bufferin maksimikoko (64 on tarpeeksi harvoin kovin paljon)
+    - Määritä delimiterit, eli minkä perusteella argumentit erotetaan
+    - Aseta bufferin koko muuttujalle scopessa, koska sitä saatetaan joutua muokkaamaan
+    - Luo tokeneille(char*) taulukko, eli char ** ja varaa muisti (malloc)
+    - Tarkista ettei varaus epäonnistunut
+    - Kutsu strtok() funktiota joka "tokenisoi" merkkijonon(char*) ja ottaa delimiterit
+    * Looppi
+        - Aseta kaikki jaetut tokenit taulukkoon
+
+        * Tarvittaessa muistin uudelleenvaraus samalla tavalla kuin syötteen luvussa.
+        - Hae seuraava tokeni strtok(NULL, delim)
+    
+    - Aseta viimeinen indeksi NULL
+    - Palauta taulukko
+
+Käynnistä prosessi (launch):
+    - Funktio ottaa argumenttina pilkotut tokenit
+    - Käytä pid_t (process id) tyyppiä ja luo pid ja wpid muuttujat
+    - Tee int status muuttuja
+    - Kutsu fork funktiota ja tallenna arvo prosessi id muuttujaan
+
+    - Jos prosessi id = 0 tämä on lapsiprosessi
+        - Kutsutaan execvp, joka ottaa ohjelman nimen "ls, pwd, dir..." ja argumentit
+        - Tarkistetaan palauttaako tämä -1 tai ylipäätään mitään
+            - Jos palauttaa niin kutsu perror
+        
+        - Jos päästään tänne poistu -1
+
+    - Jos prosessi id < 0 forkkaus epäonnistui
+        - Kutsu perror
+    
+    - Muussa tapauksessa tee do while loop, jossa odotetaan, että lapsiprosessi valmistuu:
+        - wpid muuttujan arvoksi asetetaan waitpid(pid, &status, WUNTRACED) funktion palautusarvo
+        - Tehdään niin kauan, kunnes prosessista poistutaan !(WIFEXITED(status)) 
+          tai se signaloidaan lopetetuksi !(WIFSIGNALED(status))
+    
+    - Palauta 1
