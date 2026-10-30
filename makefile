@@ -1,5 +1,5 @@
 CC      = gcc
-CFLAGS  = -Wall -Wextra -std=c11 -g -Iinclude
+CFLAGS  = -Wall -Wextra -std=c11 -g -Iinclude -fsanitize=address -fno-omit-frame-pointer
 TARGET  = ohjelma
 
 SRCS = $(wildcard src/*.c)
@@ -9,7 +9,7 @@ DEPS = $(OBJS:.o=.d)
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) $(OBJS) -o $@
+	$(CC) $(CFLAGS) $(OBJS) -o $@
 
 %.o: %.c
 	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@

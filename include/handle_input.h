@@ -8,10 +8,13 @@
 
 #define MAX_INPUT_BUFFER 1024
 #define MAX_ARGUMENT_BUFFER 64
-#define DELIMITER " \t\r\n\a"
+#define DELIMITER " \t\r\n"
 
 
+// Hae syöte
 char *getInput(void);
+
+// Pilko syöte
 char **parseInput(char *input);
 
 #endif

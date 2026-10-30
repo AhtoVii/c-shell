@@ -7,7 +7,7 @@ char *builtin_str[] =
     "exit",
     "pwd",
     "cls",
-    "echo"
+    "echo1"
 };
 
 int (*builtin_func[]) (char**) = {
@@ -31,7 +31,11 @@ int launch(char **args) {
 
     if (pid == 0) {
         if (execvp(args[0], args) == -1) {
-            perror("lapsiprosessi epäonnistui");
+            fprintf(stderr, "%s: komentoa ei löytynyt\n", args[0]);
+        } else if (errno == ENOENT) {
+            fprintf(stderr, "%s: ei suoritusoikeutta\n", args[0]);
+        } else {
+            fprintf(stderr, "%s: %s\n", args[0], strerror(errno));
         }
 
         exit(EXIT_FAILURE);
@@ -110,9 +114,10 @@ int pwd_cmd(char **args) {
 
 int cls_cmd(char **args) {
     (void)args;
-    printf("\033[H\033[J");
 
-    //system("@cls||clear");
+    fflush(stdout);
+    printf("\033[H\033[2J\033[3J");
+    fflush(stdout);
     return 1;
 }
 
