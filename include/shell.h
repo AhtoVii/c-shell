@@ -10,10 +10,13 @@
 int launch(char **args);
 int execute(char **args);
 
-int cmdCd(char **args);
-int cmdHelp(char **args);
-int cmdExit(char **args);
+int cd_cmd(char **args);
+int help_cmd(char **args);
+int exit_cmd(char **args);
+int pwd_cmd(char **args);
+int cls_cmd(char **args);
+int echo_cmd(char **args);
 
-int numBuiltins();
+int num_builtins();
 
 #endif

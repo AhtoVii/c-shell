@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include "handleInput.h"
+#include "handle_input.h"
 #include "shell.h"
 
 int main(void) {

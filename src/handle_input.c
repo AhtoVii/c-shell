@@ -1,8 +1,8 @@
-#include "handleInput.h"
+#include "handle_input.h"
 
 char *getInput(void) {
-    int bufferSize = MAX_INPUT_BUFFER;
-    char *buffer = malloc(sizeof(char) * bufferSize);
+    int buffer_size = MAX_INPUT_BUFFER;
+    char *buffer = malloc(sizeof(char) * buffer_size);
 
     if (!buffer) {
         fprintf(stderr, "muistin varaus epäonnistui");
@@ -22,9 +22,9 @@ char *getInput(void) {
             buffer[i++] = c;
         }
 
-        if (i >= bufferSize) {
-            bufferSize *= 2;
-            buffer = realloc(buffer, bufferSize);
+        if (i >= buffer_size) {
+            buffer_size *= 2;
+            buffer = realloc(buffer, buffer_size);
 
             if (!buffer) {
                 fprintf(stderr, "muistin uudelleenvaraus epäonnistui");
@@ -35,8 +35,8 @@ char *getInput(void) {
 }
 
 char **parseInput(char *input) {
-    int bufferSize = MAX_ARGUMENT_BUFFER;
-    char **tokens = malloc(sizeof(char*) * bufferSize);
+    int buffer_size = MAX_ARGUMENT_BUFFER;
+    char **tokens = malloc(sizeof(char*) * buffer_size);
 
     if (!tokens) {
         fprintf(stderr, "muistin varaus epäonnistui");
@@ -49,9 +49,9 @@ char **parseInput(char *input) {
     while (token != NULL) {
         tokens[i++] = token;
 
-        if (i >= bufferSize) {
-            bufferSize *= 2;
-            tokens = realloc(tokens, sizeof(char*) * bufferSize);
+        if (i >= buffer_size) {
+            buffer_size *= 2;
+            tokens = realloc(tokens, sizeof(char*) * buffer_size);
 
             if (!tokens) {
                 fprintf(stderr, "muistin uudelleenvaraus epäonnistui");
