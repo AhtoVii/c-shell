@@ -7,7 +7,7 @@ char *builtin_str[] =
     "exit",
     "pwd",
     "cls",
-    "echo1"
+    "echo"
 };
 
 int (*builtin_func[]) (char**) = {
@@ -74,7 +74,7 @@ int cd_cmd(char **args) {
         fprintf(stderr, "odotettiin argumenttia komennolle \"cd\"\n");
     } else {
         if (chdir(args[1]) != 0) {
-            perror("hakemiston vaihto epäonnistui");
+            fprintf(stderr, "%s: %s: hakemistoa ei löytynyt\n", args[0], args[1]);
         }
     }
 
@@ -84,8 +84,9 @@ int help_cmd(char **args) {
     (void)args;
 
     printf("Sisäänrakennetut komennot:\n");
+
     for (int i = 0; i < num_builtins(); i++) {
-        printf("\t%s\n", builtin_str[i]);
+        printf("*    [%s]\n", builtin_str[i]);
     }
 
     return 1;
