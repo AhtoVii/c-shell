@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
+#include <ctype.h>
 
 #define MAX_INPUT_BUFFER 1024
 #define MAX_ARGUMENT_BUFFER 64
@@ -12,9 +13,12 @@
 
 
 // Hae syöte
-char *getInput(void);
+char *get_input(void);
 
 // Pilko syöte
-char **parseInput(char *input);
+char **parse_input(char *input);
+
+// Vapauta tokenit
+void free_tokens(char **tokens);
 
 #endif

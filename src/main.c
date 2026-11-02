@@ -19,6 +19,7 @@ int main(void) {
     int status = 1;
     char *user = get_user();
     char *host_name = get_host_name();
+    
 
     while (status) {
         char *current_dir = get_current_directory();
@@ -26,13 +27,14 @@ int main(void) {
         printf("%s@%s:%s$ ", user, host_name, current_dir);
         fflush(stdout);
 
-        char *line = getInput();
-        char **args = parseInput(line);
+        char *line = get_input();
+        char **args = parse_input(line);
         status = execute(args);
 
         free(current_dir);
         free(line);
-        free(args);
+        free_tokens(args);
+
     }
 
     free(user);
