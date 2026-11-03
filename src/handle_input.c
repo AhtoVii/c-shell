@@ -34,99 +34,136 @@ char *get_input(void) {
     }
 }
 
-char **parse_input(char *input) {
-    int buffer_size = MAX_ARGUMENT_BUFFER;
-    char **tokens = malloc(sizeof(char*) * buffer_size); // Taulukko sisältää tokenit (char*)
-
-    // Tarkista, ettei muistinvaraus epäonnistu
-    if (!tokens) {
-        fprintf(stderr, "muistinvaraus epäonnistui");
-        exit(EXIT_FAILURE);
-    }
+int parse_input(char *input, char **tokens) {
 
     char *ptr = input; // Käy koko syötteen läpi
     int count = 0; // Taulukkoa varten
 
-    while (*ptr != '\0') {
-
-        // Ohitetaan kaikki välilyönnit
-        while (*ptr != '\0' && isspace((unsigned char)*ptr)) {
+    while (*ptr) {
+        while (isspace((unsigned char)*ptr)) {
             ptr++;
         }
 
-        // Jos äskeinen while-loop saavutti syötteen lopun
-        if (*ptr == '\0') {
+        if (!*ptr) {
             break;
         }
 
-        const char *start = ptr;
-        char mode = ' ';
-        bool word_has_started = 0;
-        
-        char buffer[1024];
-
-        // Selvitetään tokenin pituus
-        while (*ptr != '\0' && !isspace((unsigned char)*ptr)) {
-            if (mode == ' ') {
-                ptr++;
-            } else if (mode == '\'') {
-
-            } else if (mode == '\"') {
-
-            }
-
-            if (*ptr == '\'') {
-                mode = '\'';
-
-            } else if (*ptr == '\"') {
-                mode = '\'';    
-            }
-        }
-
-        // Lasketaan pituus
-        size_t len = (size_t)(ptr - start);
-        
-        // Varataan tarvittaessa lisää muistia
-        if (count + 1 >= buffer_size) {
-            buffer_size *= 2;
-            char **temp = realloc(tokens, sizeof(char*) * buffer_size);
-
-            if (!temp) {
-                fprintf(stderr, "muistin uudelleenvaraus epäonnistui");
-                exit(EXIT_FAILURE);
-            }
-
-            tokens = temp;
-        }
-
-        // Luodaan tokenin muuttuja (+1 null-terminaattoria varten)
-        char *token = malloc(len + 1);
+        char *token = malloc(strlen(ptr) + 1);
+        size_t len = 0;
 
         // Tarkistetaan, ettei muistinvaraus epäonnistunut
         if (!token) {
-            fprintf(stderr, "muistinvaraus epäonnistui");
+            fprintf(stderr, "muistinvaraus epäonnistui\n");
             exit(EXIT_FAILURE);
         }
 
-        // Kopioidaan muuttujaan tokeni (start osoittaa ptr-pointteriin)
-        memcpy(token, start, len);
+        while (*ptr && !isspace((unsigned char)*ptr)) {
 
-        // Asetetaan null-terminaattori
+            if (*ptr == SINGLE_QUOTE) {
+                int val = handle_single_quotes(token, &ptr, &len);
+                if (val != 0) {
+                    free(token);
+                    tokens[count] = NULL;
+                    return -1;
+                }
+
+            } else if (*ptr == DOUBLE_QUOTE) {
+                int val = handle_double_quotes(token, &ptr, &len);
+                if (val != 0) {
+                    free(token);
+                    tokens[count] = NULL;
+                    return -1;
+                }
+
+            } else if (*ptr == ESCAPE_CHAR) {
+                ptr++;
+                token[len++] = *ptr++;
+            } /* else if (*ptr == OVERWRITE_OUTPUT) {
+                handle_output_overwrite(token, &ptr, &len);
+                
+            } else if (*ptr == OVERWRITE_APPEND) {
+                handle_output_append(token, &ptr, &len);
+
+            } else if (*ptr == INPUT_REDIRECTION) {
+                handle_input_redirection(token, &ptr, &len);
+
+            } else if (*ptr == HERE_DOCUMENT) {
+                handle_here_document(token, &ptr, &len);
+
+            } */ else {
+                token[len++] = *ptr++;
+            }
+        }
+
         token[len] = '\0';
-
-        // Lisätään taulukkoon tokeni ja kasvatetaan count-muuttujaa
         tokens[count++] = token;
     }
 
     // Viimeinen elementti on NULL
     tokens[count] = NULL;
-    return tokens;
+    return 0;
 }
+
+int handle_single_quotes(char *token, char **ptr, size_t *len) {
+    (*ptr)++;
+
+    while (**ptr && **ptr != '\'') {
+        token[(*len)++] = **ptr;
+        (*ptr)++;
+    }
+
+    if (!**ptr) {
+        // FAIL
+        /*fprintf(stderr, "heittomerkkejä ei suljettu\n");
+        exit(EXIT_FAILURE);*/
+        return -1;
+    }
+
+    (*ptr)++;
+    return 0;
+}
+
+int handle_double_quotes(char *token, char **ptr, size_t *len) {
+    (*ptr)++;
+
+    while (**ptr && **ptr != '"') {
+        if (**ptr == '\\' && (*ptr)[1] && strchr("\"\\", (*ptr)[1])) {
+            (*ptr)++;
+        }
+
+        token[(*len)++] = **ptr;
+        (*ptr)++;
+    }
+
+    if (!**ptr) {
+        // FAIL
+        /* fprintf(stderr, "lainausmerkkejä ei suljettu\n");
+        exit(EXIT_FAILURE); */
+        return -1;
+    }
+
+    (*ptr)++;
+    return 0;
+}
+
+/* void handle_output_overwrite(char *token, char **ptr, size_t *len) {
+
+}
+
+void handle_output_append(char *token, char **ptr, size_t *len) {
+
+}
+
+void handle_input_redirection(char *token, char **ptr, size_t *len) {
+
+}
+
+void handle_here_document(char *token, char **ptr, size_t *len) {
+
+} */
 
 void free_tokens(char **tokens) {
     for (size_t i = 0; tokens[i] != NULL; i++) {
         free(tokens[i]);
     }
-
-    free(tokens);
 }

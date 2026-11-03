@@ -1,13 +1,21 @@
 #include "shell.h"
 
-char *builtin_str[] =
- {
+char *builtin_str[] = {
     "cd",
     "help",
     "exit",
     "pwd",
     "cls",
     "echo"
+};
+
+char *builtin_str_description[] = {
+    "vaihda hakemistoa",
+    "tulosta sisäänrakennetut komennot",
+    "poistu",
+    "tulosta nykyinen hakemisto",
+    "puhdista konsoli",
+    "tulosta"
 };
 
 int (*builtin_func[]) (char**) = {
@@ -40,7 +48,7 @@ int launch(char **args) {
 
         exit(EXIT_FAILURE);
     } else if (pid < 0) {
-        perror("Forkkaus epäonnistui");
+        perror("forkkaus epäonnistui");
     } else {
         do {
             wpid = waitpid(pid, &status, WUNTRACED);
@@ -86,7 +94,7 @@ int help_cmd(char **args) {
     printf("Sisäänrakennetut komennot:\n");
 
     for (int i = 0; i < num_builtins(); i++) {
-        printf("*    [%s]\n", builtin_str[i]);
+        printf("[%s]:\t[%s]\n", builtin_str[i], builtin_str_description[i]);
     }
 
     return 1;

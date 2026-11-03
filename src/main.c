@@ -6,13 +6,20 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "handle_input.h"
 #include "shell.h"
 
-char *get_current_directory(void);
+#define RESET "\033[0m"
+#define GREEN "\033[32m"
+#define CYAN "\033[36m"
+
+#define MAX_ARGUMENT_BUFFER 64
+
 char *get_host_name(void);
 char *get_user(void);
+void shorten_path(const char *cwd, char *out, size_t size);
 
 int main(void) {
 
@@ -22,30 +29,64 @@ int main(void) {
     
 
     while (status) {
-        char *current_dir = get_current_directory();
+        char cwd[PATH_MAX];
+        char current_dir[PATH_MAX + 2];
 
-        printf("%s@%s:%s$ ", user, host_name, current_dir);
+        getcwd(cwd, sizeof cwd);
+        shorten_path(cwd, current_dir, sizeof current_dir);
+
+        printf(GREEN "%s@%s" RESET ":" CYAN "%s" RESET "$ ", user, host_name, current_dir);
         fflush(stdout);
 
         char *line = get_input();
-        char **args = parse_input(line);
+        char **args = malloc(MAX_ARGUMENT_BUFFER * sizeof(char *));
+
+        int parsed_input_value = parse_input(line, args); 
+
+        while (parsed_input_value == -1) {
+            printf("> ");
+            fflush(stdout);
+
+            char *missing_input = get_input();
+
+            if (missing_input == NULL) {
+                fprintf(stderr, "\nodottamaton tiedoston loppu\n");
+                break;
+            }
+
+            size_t line_len = strlen(line);
+            size_t extra_len = strlen(missing_input);
+
+            char *tmp = realloc(line, line_len + 1 + extra_len + 1);
+            if (tmp == NULL) {
+                fprintf(stderr, "muistin uudelleenvaraus epäonnistui\n");
+                free(missing_input);
+                break;
+            }
+
+            line = tmp;
+
+            line[line_len] = '\n';
+            line[line_len + 1] = '\0';
+            strcat(line, missing_input);
+            free(missing_input);
+
+            free_tokens(args);
+            args[0] = NULL;
+            parsed_input_value = parse_input(line, args);
+        }
+
+    if (parsed_input_value == 0) {
         status = execute(args);
-
-        free(current_dir);
-        free(line);
-        free_tokens(args);
-
     }
 
-    free(user);
+    free(line);
+    free_tokens(args);
+    free(args);
+
     free(host_name);
     return EXIT_SUCCESS;
-}
-
-char *get_current_directory(void) {
-    char *buffer = malloc(1024);
-    getcwd(buffer, 1024);
-    return buffer;
+    }
 }
 
 char *get_host_name(void) {
@@ -68,4 +109,19 @@ char *get_user(void) {
     struct passwd *pw = getpwuid(getuid());
     char *user = pw ? pw->pw_name : "user";
     return user;
+}
+
+void shorten_path(const char *cwd, char *out, size_t size) {
+    const char *home = getenv("HOME");
+
+    if (home && *home) {
+        size_t len = strlen(home);
+
+        if (strncmp(cwd, home, len) == 0 && (cwd[len] == '/' || cwd[len] == '\0')) {
+            snprintf(out, size, "~%s", cwd + len);
+            return;
+        }
+    }
+
+    snprintf(out, size, "%s", cwd);
 }

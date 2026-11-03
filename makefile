@@ -1,6 +1,6 @@
 CC      = gcc
 CFLAGS  = -Wall -Wextra -std=c11 -g -Iinclude -fsanitize=address -fno-omit-frame-pointer
-TARGET  = ohjelma
+TARGET  = shell
 
 SRCS = $(wildcard src/*.c)
 OBJS = $(SRCS:.c=.o)
