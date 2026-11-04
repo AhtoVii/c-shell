@@ -34,19 +34,23 @@ char *get_input(void) {
     }
 }
 
-int parse_input(char *input, char **tokens) {
+Parse_Result parse_input(char *input, char **tokens) {
 
     char *ptr = input; // Käy koko syötteen läpi
     int count = 0; // Taulukkoa varten
 
     while (*ptr) {
+
+        // Ohitetaan välilyönnit
         while (isspace((unsigned char)*ptr)) {
             ptr++;
         }
 
+        // Jos saavutettiin syötteen loppu
         if (!*ptr) {
             break;
         }
+
 
         char *token = malloc(strlen(ptr) + 1);
         size_t len = 0;
@@ -60,37 +64,22 @@ int parse_input(char *input, char **tokens) {
         while (*ptr && !isspace((unsigned char)*ptr)) {
 
             if (*ptr == SINGLE_QUOTE) {
-                int val = handle_single_quotes(token, &ptr, &len);
-                if (val != 0) {
+                Parse_Result val = handle_single_quotes(token, &ptr, &len);
+                if (val == PARSE_INCOMPLETE) {
                     free(token);
                     tokens[count] = NULL;
-                    return -1;
+                    return PARSE_INCOMPLETE;
                 }
 
             } else if (*ptr == DOUBLE_QUOTE) {
-                int val = handle_double_quotes(token, &ptr, &len);
-                if (val != 0) {
+                Parse_Result val = handle_double_quotes(token, &ptr, &len);
+                if (val == PARSE_INCOMPLETE) {
                     free(token);
                     tokens[count] = NULL;
-                    return -1;
+                    return PARSE_INCOMPLETE;
                 }
 
-            } else if (*ptr == ESCAPE_CHAR) {
-                ptr++;
-                token[len++] = *ptr++;
-            } /* else if (*ptr == OVERWRITE_OUTPUT) {
-                handle_output_overwrite(token, &ptr, &len);
-                
-            } else if (*ptr == OVERWRITE_APPEND) {
-                handle_output_append(token, &ptr, &len);
-
-            } else if (*ptr == INPUT_REDIRECTION) {
-                handle_input_redirection(token, &ptr, &len);
-
-            } else if (*ptr == HERE_DOCUMENT) {
-                handle_here_document(token, &ptr, &len);
-
-            } */ else {
+            }  else {
                 token[len++] = *ptr++;
             }
         }
@@ -101,10 +90,10 @@ int parse_input(char *input, char **tokens) {
 
     // Viimeinen elementti on NULL
     tokens[count] = NULL;
-    return 0;
+    return PARSE_OK;
 }
 
-int handle_single_quotes(char *token, char **ptr, size_t *len) {
+Parse_Result handle_single_quotes(char *token, char **ptr, size_t *len) {
     (*ptr)++;
 
     while (**ptr && **ptr != '\'') {
@@ -116,14 +105,14 @@ int handle_single_quotes(char *token, char **ptr, size_t *len) {
         // FAIL
         /*fprintf(stderr, "heittomerkkejä ei suljettu\n");
         exit(EXIT_FAILURE);*/
-        return -1;
+        return PARSE_INCOMPLETE;
     }
 
     (*ptr)++;
-    return 0;
+    return PARSE_OK;
 }
 
-int handle_double_quotes(char *token, char **ptr, size_t *len) {
+Parse_Result handle_double_quotes(char *token, char **ptr, size_t *len) {
     (*ptr)++;
 
     while (**ptr && **ptr != '"') {
@@ -139,28 +128,12 @@ int handle_double_quotes(char *token, char **ptr, size_t *len) {
         // FAIL
         /* fprintf(stderr, "lainausmerkkejä ei suljettu\n");
         exit(EXIT_FAILURE); */
-        return -1;
+        return PARSE_INCOMPLETE;
     }
 
     (*ptr)++;
-    return 0;
+    return PARSE_OK;
 }
-
-/* void handle_output_overwrite(char *token, char **ptr, size_t *len) {
-
-}
-
-void handle_output_append(char *token, char **ptr, size_t *len) {
-
-}
-
-void handle_input_redirection(char *token, char **ptr, size_t *len) {
-
-}
-
-void handle_here_document(char *token, char **ptr, size_t *len) {
-
-} */
 
 void free_tokens(char **tokens) {
     for (size_t i = 0; tokens[i] != NULL; i++) {

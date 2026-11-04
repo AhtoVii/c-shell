@@ -7,6 +7,9 @@
 #include <sys/wait.h>
 #include <string.h>
 #include <errno.h>
+#include <stdbool.h>
+#include <fcntl.h>
+#include <limits.h>
 
 // Käynnistä prosessi
 int launch(char **args);

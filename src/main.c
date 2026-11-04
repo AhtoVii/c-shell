@@ -20,32 +20,24 @@
 char *get_host_name(void);
 char *get_user(void);
 void shorten_path(const char *cwd, char *out, size_t size);
+void print_prompt(bool wait_for_input, char *host_name);
 
 int main(void) {
 
     int status = 1;
-    char *user = get_user();
+
     char *host_name = get_host_name();
-    
-
     while (status) {
-        char cwd[PATH_MAX];
-        char current_dir[PATH_MAX + 2];
 
-        getcwd(cwd, sizeof cwd);
-        shorten_path(cwd, current_dir, sizeof current_dir);
-
-        printf(GREEN "%s@%s" RESET ":" CYAN "%s" RESET "$ ", user, host_name, current_dir);
-        fflush(stdout);
+        print_prompt(false, host_name);
 
         char *line = get_input();
         char **args = malloc(MAX_ARGUMENT_BUFFER * sizeof(char *));
 
-        int parsed_input_value = parse_input(line, args); 
+        Parse_Result parsed_input_value = parse_input(line, args); 
 
-        while (parsed_input_value == -1) {
-            printf("> ");
-            fflush(stdout);
+        while (parsed_input_value == PARSE_INCOMPLETE) {
+            print_prompt(true, NULL);
 
             char *missing_input = get_input();
 
@@ -58,6 +50,7 @@ int main(void) {
             size_t extra_len = strlen(missing_input);
 
             char *tmp = realloc(line, line_len + 1 + extra_len + 1);
+
             if (tmp == NULL) {
                 fprintf(stderr, "muistin uudelleenvaraus epäonnistui\n");
                 free(missing_input);
@@ -76,17 +69,18 @@ int main(void) {
             parsed_input_value = parse_input(line, args);
         }
 
-    if (parsed_input_value == 0) {
-        status = execute(args);
-    }
+        if (parsed_input_value == PARSE_OK) {
+            status = execute(args);
+        }
 
-    free(line);
-    free_tokens(args);
-    free(args);
+        free(line);
+        free_tokens(args);
+        
+        free(args);
+    }
 
     free(host_name);
     return EXIT_SUCCESS;
-    }
 }
 
 char *get_host_name(void) {
@@ -124,4 +118,22 @@ void shorten_path(const char *cwd, char *out, size_t size) {
     }
 
     snprintf(out, size, "%s", cwd);
+}
+
+void print_prompt(bool wait_for_input, char *host_name) {
+    // 
+    if (wait_for_input) {
+            printf("> ");
+    } else {
+        char *user = get_user();
+        char cwd[PATH_MAX];
+        char current_dir[PATH_MAX + 2];
+
+        getcwd(cwd, sizeof cwd);
+        shorten_path(cwd, current_dir, sizeof current_dir);
+        printf(GREEN "%s@%s" RESET ":" CYAN "%s" RESET "$ ", user, host_name, current_dir);
+    }
+
+    fflush(stdout);
+
 }
