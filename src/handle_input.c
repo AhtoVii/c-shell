@@ -12,26 +12,24 @@ char *get_input(void) {
     int c;
     int i = 0;
 
-    while (true) {
-        c = getchar();
-
-        if (c == EOF || c == '\n') {
-            buffer[i] = '\0';
-            return buffer;
-        } else {
-            buffer[i++] = c;
-        }
+    while ((c = getchar()) != EOF && c != '\n') {
+        buffer[i++] = c;
 
         if (i >= buffer_size) {
             buffer_size *= 2;
-            buffer = realloc(buffer, buffer_size);
+            char *tmp = realloc(buffer, buffer_size);
 
-            if (!buffer) {
+            if (!tmp) {
                 fprintf(stderr, "muistin uudelleenvaraus epäonnistui");
                 exit(EXIT_FAILURE);
             }
+
+            buffer = tmp;
         }
     }
+
+    buffer[i] = '\0';
+    return buffer;
 }
 
 Parse_Result parse_input(char *input, char **tokens) {
@@ -102,9 +100,6 @@ Parse_Result handle_single_quotes(char *token, char **ptr, size_t *len) {
     }
 
     if (!**ptr) {
-        // FAIL
-        /*fprintf(stderr, "heittomerkkejä ei suljettu\n");
-        exit(EXIT_FAILURE);*/
         return PARSE_INCOMPLETE;
     }
 
@@ -125,9 +120,6 @@ Parse_Result handle_double_quotes(char *token, char **ptr, size_t *len) {
     }
 
     if (!**ptr) {
-        // FAIL
-        /* fprintf(stderr, "lainausmerkkejä ei suljettu\n");
-        exit(EXIT_FAILURE); */
         return PARSE_INCOMPLETE;
     }
 

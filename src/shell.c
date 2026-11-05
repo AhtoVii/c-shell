@@ -1,14 +1,15 @@
 #include "shell.h"
 
 char *builtin_str[] = {
-    "cd",
-    "help",
-    "exit",
-    "pwd",
-    "cls",
-    "echo"
+    "cd",   // Vaihda hakemistoa
+    "help", // Näytä sisäänrakennetut komennot
+    "exit", // Poistu ohjelmasta
+    "pwd",  // Tulosta nykyinen hakemisto 
+    "cls",  // Puhdista konsoli
+    "echo"  // Tulosta viesti
 };
 
+// Sisäänrakennettujen komentojen kuvaukset
 char *builtin_str_description[] = {
     "vaihda hakemistoa",
     "tulosta sisäänrakennetut komennot",
@@ -18,6 +19,7 @@ char *builtin_str_description[] = {
     "tulosta"
 };
 
+// Funktiopointterit sisäänrakennettuihin komentoihin
 int (*builtin_func[]) (char**) = {
     &cd_cmd,
     &help_cmd,
@@ -27,70 +29,71 @@ int (*builtin_func[]) (char**) = {
     &echo_cmd
 };
 
+// Palauta sisäänrakennettujen komentojen määrä
 int num_builtins() {
     return sizeof(builtin_str) / sizeof(char*);
 }
 
-int launch(char **args) {
-    // fork() kloonaa koko prosessin, sen jälkeen on kaksi prosessia, jotka ovat samat, mutta eroavat palautusarvossa
-    // lapsessa: 0
-    // vanhemmassa: lapsen PID (>0)
-    // virhe: -1
-    
-    pid_t pid = fork();
+int launch(char **args) {    
+    pid_t pid = fork(); // Luo lapsiprosessin
 
     if (pid == 0) {
-        // Lapsiprosessi
-        // execvp korvaa tämän prosessin kokonaan uudella ohjelmalla
-        // onnistuessaan ei koskaan palaa ja jatketaan vain virheessä.
+        // Lapsiprosessi: suoritetaan ulkoinen ohjelma
         execvp(args[0], args);
 
-        // Päästiin tänne, joten virhe
+        // Jos execvp epäonnistuu tulostetaan virhe ja poistutaan
         fprintf(stderr, "%s: %s\n", args[0], strerror(errno));
 
-        // _exit lopettaa lapsiprosessin heti.
-        // 127 = ei löytynyt, 126 = ei oikeuksia
-        _exit(errno == ENOENT ? 127 : 126);
+        _exit(errno == ENOENT ? 127 : 126); // 127 = ei löytynyt 126 = ei oikeuksia
     }
 
      if (pid < 0) {
+        // virhe forkin aikana
         perror("forkkaus epäonnistui");
     } else {
-        // VANHEMPI: odotetaan, että lapsi valmistuu.
+        // Vanhempi prosessi: odotetaan lapsiprosessin päättymistä
         int status;
-        // waitpid palauttaa -1 virheessä. WUNTRACED herättää myös, jos lapsi
-        // pysäytetään (Ctrl+Z). Silloin WIFEXITED ja WIFSIGNALED ovat
-        // molemmat epätosia, ja silmukka odottaa uudelleen.
         while (waitpid(pid, &status, WUNTRACED) != -1 &&
                !WIFEXITED(status) && !WIFSIGNALED(status));
-        //      ^ ei virhettä   ^ ei vielä poistunut  ^ ei tapettu signaalilla
     }
 
-    return 1;
+    return 1; // Palautetaan 1 jatkamista varten
 }
 
 int execute(char **args) {
-    // Etsitään '>' ja katkaistaan komento sen kohdalta: echo "hello" > file.txt
+    // Tarkistetaan onko komennossa uudelleenohjausoperaattori ('>' tai '>>')
 
     char **p = args;
     char *outfile = NULL;
+    char *cmd = NULL;
 
     // Kasvatetaan osoitinta, kunnes '>' merkki tulee vastaan tai taulukko päättyy
     // Strcmp palauttaa 0, kun merkkijonot on samat, joten silmukka päättyy
-    while (*p && strcmp(*p, ">")) {
+    while (*p) {
+        if (!(strcmp(*p, ">"))) {
+            cmd = ">";
+            break;
+        }
+
+        if (!(strcmp(*p, ">>"))) {
+            cmd = ">>";
+            break;
+        }
+
         p++;
     }
 
     if (*p) {
-        // Seuraava tokeni on tiedosto
+        // Jos löytyy uudelleenohjaus, tallennetaan tiedoston nimi,
+        // joka on operaattorin oikealla puolella
         outfile = p[1];
 
-        // Katkaistaan taulukko tähän: komento loppuu ennen '>' merkkiä
+        // Katkaistaan taulukko tähän: komento loppuu ennen merkkiä
         *p = NULL;
 
-        // Esim. echo "hello" >
         if (!outfile) { 
-            fprintf(stderr, "tiedostonimi puuttuu '>' merkin jälkeen\n");
+            // Jos tiedostonimi puuttuu tulostetaan virhe
+            fprintf(stderr, "tiedostonimi puuttuu '%s' merkin jälkeen\n", cmd);
             return 1;
         }
     }
@@ -100,7 +103,6 @@ int execute(char **args) {
         return 1;
     }
 
-
     int saved = -1;
 
     if (outfile) {
@@ -108,18 +110,26 @@ int execute(char **args) {
         // O_WRONLY: vain kirjoitus
         // O_CREAT: luo, jos ei ole olemassa vielä
         // O_TRUNC: tyhjennä vanha sisältö
+        // O_APPEND: lisää tiedoston loppuun
         // 0644: kenellä oikeudet
-        int fd = open(outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+
+        int o_flag = strcmp(cmd, ">") == 0 ? O_TRUNC : O_APPEND;
+
+        int fd = open(outfile, O_WRONLY | O_CREAT | o_flag, 0644);
         if (fd < 0) {
             perror("tiedoston avaus epäonnistui");
             return 1;
         }
 
-        // Tyhjennetään vanha puskuri
+        // Tyhjennetään stdout-puskuri
         fflush(stdout);
 
+        // Tallennetaan alkuperäinen stdout
         saved = dup(STDOUT_FILENO);
+
+        // Uudelleenohjataan stdout tiedostoon
         dup2(fd, STDOUT_FILENO);
+
         close(fd);
     }
 
@@ -136,7 +146,7 @@ int execute(char **args) {
     int ret = (i < num_builtins()) ? builtin_func[i](args) : launch(args);
 
     if (outfile) {
-        // Kirjoitetaan puskurin sisältö tiedostoon
+        // Palautetaa stdout alkuperäiseksi
         fflush(stdout);
         dup2(saved, STDOUT_FILENO);
         close(saved);
@@ -176,7 +186,7 @@ int exit_cmd(char **args) {
 int pwd_cmd(char **args) {
     (void)args;
 
-    char buffer[4096];
+    char buffer[PATH_MAX];
 
     if (getcwd(buffer, sizeof(buffer)) != NULL) {
         printf("%s\n", buffer);
@@ -192,7 +202,7 @@ int cls_cmd(char **args) {
     (void)args;
 
     fflush(stdout);
-    printf("\033[H\033[2J\033[3J");
+    printf("\033[H\033[2J\033[3J"); // ANSI-escape koodi konsolin tyhjentämiseen
     fflush(stdout);
     return 1;
 }

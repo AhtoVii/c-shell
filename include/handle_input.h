@@ -14,12 +14,8 @@
 #define DOUBLE_QUOTE '"'
 #define ESCAPE_CHAR '\\'
 
-#define OVERWRITE_OUTPUT '>'
-#define OVERWRITE_APPEND 'x'
-#define INPUT_REDIRECTION '<'
-#define HERE_DOCUMENT 'x'
-
-typedef enum Parse_Result{
+// Jäsentämisen tulos
+typedef enum {
     PARSE_OK,
     PARSE_INCOMPLETE,
     PARSE_FAILED,
@@ -34,7 +30,7 @@ Parse_Result parse_input(char *input, char **tokens);
 Parse_Result handle_single_quotes(char *token, char **ptr, size_t *len);
 Parse_Result handle_double_quotes(char *token, char **ptr, size_t *len);
 
-// Vapauta tokenit
+// Vapauta tokenit, mutta älä itse taulukkoa
 void free_tokens(char **tokens);
 
 #endif
