@@ -67,26 +67,37 @@ int execute(char **args) {
     char *outfile = NULL;
     char *cmd = NULL;
 
-    // Kasvatetaan osoitinta, kunnes '>' merkki tulee vastaan tai taulukko päättyy
+    // Kasvatetaan osoitinta, kunnes jokin uudelleenohjausmerkki tulee vastaan tai taulukko päättyy
     // Strcmp palauttaa 0, kun merkkijonot on samat, joten silmukka päättyy
     while (*p) {
-        if (!(strcmp(*p, ">"))) {
-            cmd = ">";
+        if (!(strcmp(*p, OVERWRITE))) {
+            cmd = OVERWRITE;
             break;
-        }
+        } else if (!(strcmp(*p, APPEND))) {
+            cmd = APPEND;
+            break;
+        } else if (!(strcmp(*p, REDIRECT_INPUT))) {
+            cmd = REDIRECT_INPUT;
+            break;
+        } else if (!(strcmp(*p, HERE_DOCUMENT))) {
+            cmd = HERE_DOCUMENT;
+            break;
+        } else {
 
-        if (!(strcmp(*p, ">>"))) {
-            cmd = ">>";
-            break;
         }
 
         p++;
     }
 
+    char *redirect_token = NULL;
+
     if (*p) {
         // Jos löytyy uudelleenohjaus, tallennetaan tiedoston nimi,
         // joka on operaattorin oikealla puolella
         outfile = p[1];
+
+        // Jos uudelleenohjaus tapahtuu, niin säilytetään koko taulukko, jotta ei tule muistivuotoa
+        redirect_token = *p;
 
         // Katkaistaan taulukko tähän: komento loppuu ennen merkkiä
         *p = NULL;
@@ -94,16 +105,22 @@ int execute(char **args) {
         if (!outfile) { 
             // Jos tiedostonimi puuttuu tulostetaan virhe
             fprintf(stderr, "tiedostonimi puuttuu '%s' merkin jälkeen\n", cmd);
+            *p = redirect_token;
             return 1;
         }
     }
 
     // Jos tyhjä syöte
     if (!args[0]) {
+        if (redirect_token) {
+            *p = redirect_token;
+        }
+
         return 1;
     }
 
     int saved = -1;
+    int input_or_output = 0;
 
     if (outfile) {
         // Yritetään avata tiedosto kirjoitukseen
@@ -113,22 +130,46 @@ int execute(char **args) {
         // O_APPEND: lisää tiedoston loppuun
         // 0644: kenellä oikeudet
 
-        int o_flag = strcmp(cmd, ">") == 0 ? O_TRUNC : O_APPEND;
+        // Ylikirjoitetaanko vai lisätäänkö tiedostoon?
+        int o_flags = strcmp(cmd, OVERWRITE) == 0 ? O_TRUNC : O_APPEND;
 
-        int fd = open(outfile, O_WRONLY | O_CREAT | o_flag, 0644);
+        if (!strcmp(cmd, OVERWRITE)) {
+            o_flags = O_WRONLY | O_CREAT | O_TRUNC;
+            input_or_output = 1;
+        } else if (!strcmp(cmd, APPEND)) {
+            o_flags = O_WRONLY | O_CREAT | O_APPEND;
+            input_or_output = 1;
+        } else if(!strcmp(cmd, REDIRECT_INPUT)) {
+            o_flags = O_RDONLY;
+        } else if (!strcmp(cmd, HERE_DOCUMENT)) {
+            o_flags = 0;
+        }
+
+        int fd = open(outfile, o_flags, 0644);
+
         if (fd < 0) {
             perror("tiedoston avaus epäonnistui");
+            *p = redirect_token;
             return 1;
         }
 
-        // Tyhjennetään stdout-puskuri
-        fflush(stdout);
+        if (input_or_output) {
+            // Tyhjennetään stdout-puskuri
+            fflush(stdout);
 
-        // Tallennetaan alkuperäinen stdout
-        saved = dup(STDOUT_FILENO);
+            // Tallennetaan alkuperäinen stdout
+            saved = dup(STDOUT_FILENO);
 
-        // Uudelleenohjataan stdout tiedostoon
-        dup2(fd, STDOUT_FILENO);
+            // Uudelleenohjataan stdout tiedostoon
+            dup2(fd, STDOUT_FILENO);
+        } else {
+
+            fflush(stdin);
+
+            saved = dup(STDIN_FILENO);
+
+            dup2(fd, STDIN_FILENO);
+        }
 
         close(fd);
     }
@@ -140,16 +181,30 @@ int execute(char **args) {
         i++;
     }
 
-    fflush(stdout); // Tyhjennetään puskuri varuulta
+    if (input_or_output) {
+        fflush(stdout); // Tyhjennetään puskuri varuulta
+    } else {
+        fflush(stdin);
+    }
 
     // Löytyikö komento? Jos löytyi kutsu funktio taulukosta esim (cd, pwd, echo), muuten aja ulkoisena ohjelmana esim (ls)
     int ret = (i < num_builtins()) ? builtin_func[i](args) : launch(args);
 
     if (outfile) {
-        // Palautetaa stdout alkuperäiseksi
-        fflush(stdout);
-        dup2(saved, STDOUT_FILENO);
-        close(saved);
+        if (input_or_output) {
+            // Palautetaa stdout alkuperäiseksi
+            fflush(stdout);
+            dup2(saved, STDOUT_FILENO);
+            close(saved);
+        } else {
+            fflush(stdin);
+            dup2(saved, STDIN_FILENO);
+            close(saved);
+        }
+    }
+
+    if (redirect_token) {
+        *p = redirect_token;
     }
 
     return ret; // 1 = jatka 0 = lopeta

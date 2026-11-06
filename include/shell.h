@@ -15,6 +15,11 @@
 #define PATH_MAX 4096
 #endif
 
+#define OVERWRITE ">"
+#define APPEND ">>"
+#define REDIRECT_INPUT "<"
+#define HERE_DOCUMENT "<<"
+
 // Käynnistä prosessi
 int launch(char **args);
 
