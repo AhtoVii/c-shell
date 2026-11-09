@@ -28,8 +28,63 @@ char *get_input(void) {
         }
     }
 
+    if (c == EOF && i == 0) {
+        free(buffer);
+        clearerr(stdin); // Jotta shell ei sulkeudu CTRL-D:stä
+        return NULL;
+    }
+
     buffer[i] = '\0';
     return buffer;
+}
+
+char *read_heredoc(const char *delim) {
+    size_t cap = 256;
+    size_t len = 0;
+    char *body = malloc(cap);
+
+    if (!body) {
+        fprintf(stderr, "muistinvaraus epäonnistui\n");
+        exit(EXIT_FAILURE);
+    }
+
+    body[0] = '\0';
+
+    while (true) {
+        char *line = get_input();
+        if (!line) {
+            break; // CTRL-D
+        }
+
+        if (!strcmp(line, delim)) {
+            free(line);
+            break;
+        }
+
+        size_t n = strlen(line);
+
+        while (len + n + 2 > cap) {
+            cap *= 2;
+            char *tmp = realloc(body, cap);
+
+            if (!tmp) {
+                fprintf(stderr, "muistin uudelleenvaraus epäonnistui\n");
+                free(line);
+                free(body);
+                exit(EXIT_FAILURE);
+            }
+
+            body = tmp;
+        }
+
+        memcpy(body + len, line, n);
+        len += n;
+        body[len++] = '\n';
+        body[len] = '\0';
+        free(line);
+    }
+
+    return body;
 }
 
 Parse_Result parse_input(char *input, char **tokens) {
@@ -77,7 +132,7 @@ Parse_Result parse_input(char *input, char **tokens) {
                     return PARSE_INCOMPLETE;
                 }
 
-            }  else {
+            } else {
                 token[len++] = *ptr++;
             }
         }

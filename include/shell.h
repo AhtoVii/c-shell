@@ -1,3 +1,7 @@
+#ifndef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #ifndef SHELL_H
 #define SHELL_H
 
@@ -23,8 +27,10 @@
 // Käynnistä prosessi
 int launch(char **args);
 
+int set_o_flags(char *cmd);
+char *get_redirection_operator(char *p, int *mode);
 // Aja prosessi
-int execute(char **args);
+int execute(char **args, char *heredoc_body);
 
 // Change directory komento
 int cd_cmd(char **args);

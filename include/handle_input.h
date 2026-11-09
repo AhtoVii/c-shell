@@ -29,6 +29,7 @@ Parse_Result parse_input(char *input, char **tokens);
 
 Parse_Result handle_single_quotes(char *token, char **ptr, size_t *len);
 Parse_Result handle_double_quotes(char *token, char **ptr, size_t *len);
+char *read_heredoc(const char *delim);
 
 // Vapauta tokenit, mutta älä itse taulukkoa
 void free_tokens(char **tokens);

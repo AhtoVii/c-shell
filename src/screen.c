@@ -10,6 +10,10 @@ void run(void) {
         print_prompt(false, host_name);
 
         char *line = get_input();
+        if (!line) {
+            putchar('\n');
+            break; // CTRL-D lopettaa shellin
+        }
         char **args = malloc(MAX_ARGUMENT_BUFFER * sizeof(char *));
 
         Parse_Result parsed_input_value = parse_input(line, args); 
@@ -26,7 +30,24 @@ void run(void) {
         }
 
         if (parsed_input_value == PARSE_OK) {
-            status = execute(args);
+            char *heredoc_body = NULL;
+            int mode;
+
+            for (int i = 0; i < (int)args[i]; i++) {
+                char *op = get_redirection_operator(args[i], &mode);
+                if (!op) {
+                    continue;
+                }
+
+                if (!strcmp(op, HERE_DOCUMENT) && args[i + 1]) {
+                    heredoc_body = read_heredoc(args[i + 1]);
+                }
+
+                break;
+            }
+
+            status = execute(args, heredoc_body);
+            free(heredoc_body);
         }
 
         free(line);
