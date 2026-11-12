@@ -50,6 +50,9 @@ int cls_cmd(char **args);
 // Echo komento
 int echo_cmd(char **args);
 
+// History komento
+int history_cmd(char **args);
+
 // Laskee sisäänrakennettujen funktioiden määrän
 int num_builtins();
 

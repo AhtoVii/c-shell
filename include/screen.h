@@ -17,9 +17,20 @@
 
 #define MAX_ARGUMENT_BUFFER 64
 
+// Palauta tietokoneen käyttäjän nimi
 char *get_host_name(void);
+
+// Hae käyttäjä
 char *get_user(void);
+
+// Lyhennä kotihakemisto
 void shorten_path(const char *cwd, char *out, size_t size);
+
+// Tulosta syöte, joka näkyy joka rivillä
 void print_prompt(bool wait_for_input, char *host_name);
+
+// Haetaan loput syötteestä, jos heitto tai lainausmerkkiä ei suljettu
 void get_missing_input(char **line);
+
+// Aja shell
 void run(void);

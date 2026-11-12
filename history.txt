@@ -1,0 +1,23 @@
+echo hello
+cd ..
+pwd
+help
+history
+ls
+wc ls
+wc test.txt
+sort test.txt
+sort
+sort test.txt
+wc test.txt
+cls
+history
+history
+cat test2.txt
+echo
+cat test2.txt
+rm test2.txt
+ls
+cls
+history
+exit

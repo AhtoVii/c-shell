@@ -1,32 +1,35 @@
 #include "shell.h"
 
-char *builtin_str[] = {
-    "cd",   // Vaihda hakemistoa
-    "help", // Näytä sisäänrakennetut komennot
-    "exit", // Poistu ohjelmasta
-    "pwd",  // Tulosta nykyinen hakemisto 
-    "cls",  // Puhdista konsoli
-    "echo"  // Tulosta viesti
+static char *builtin_str[] = {
+    "cd",       // Vaihda hakemistoa
+    "help",     // Näytä sisäänrakennetut komennot
+    "exit",     // Poistu ohjelmasta
+    "pwd",      // Tulosta nykyinen hakemisto 
+    "cls",      // Puhdista konsoli
+    "echo",     // Tulosta viesti
+    "history",  // Tulosta komentohistoria
 };
 
 // Sisäänrakennettujen komentojen kuvaukset
-char *builtin_str_description[] = {
+static char *builtin_str_description[] = {
     "vaihda hakemistoa",
     "tulosta sisäänrakennetut komennot",
     "poistu",
     "tulosta nykyinen hakemisto",
     "puhdista konsoli",
-    "tulosta"
+    "tulosta syöte",
+    "tulosta komentohistoria"
 };
 
 // Funktiopointterit sisäänrakennettuihin komentoihin
-int (*builtin_func[]) (char**) = {
+static int (*builtin_func[]) (char**) = {
     &cd_cmd,
     &help_cmd,
     &exit_cmd,
     &pwd_cmd,
     &cls_cmd,
-    &echo_cmd
+    &echo_cmd,
+    &history_cmd,
 };
 
 // Palauta sisäänrakennettujen komentojen määrä
@@ -114,6 +117,34 @@ static int body_to_fd(const char *body) {
     int fd = dup(fileno(tmp));
     fclose(tmp);
     return fd;
+}
+
+// Tallennetaan komentohistoriaan
+static int append_command_history(char **args) {
+    
+    FILE *fptr;
+    fptr = fopen("history.txt", "a");
+
+    if (!fptr) {
+        fprintf(stderr, "tiedostonavaus epäonnistui\n");
+        return 1;
+    } 
+    
+    char **tmp = args;
+    while (*tmp) {
+        fputs(*tmp, fptr);
+
+        // Lisätään välilyönti
+        if (*(tmp + 1)) {
+            fputs(" ", fptr);
+        }
+        tmp++;
+    }
+
+    fputs("\n", fptr);
+    fclose(fptr);
+
+    return 1;
 }
 
 int execute(char **args, char *heredoc_body) {
@@ -212,6 +243,9 @@ int execute(char **args, char *heredoc_body) {
         fflush(stdout); // Tyhjennetään puskuri varuulta
     }
 
+    // Komennot tallennetaan aina komentohistoriaan
+    append_command_history(args);
+
     // Löytyikö komento? Jos löytyi kutsu funktio taulukosta esim (cd, pwd, echo), muuten aja ulkoisena ohjelmana esim (ls)
     int ret = (i < num_builtins()) ? builtin_func[i](args) : launch(args);
 
@@ -236,9 +270,13 @@ int execute(char **args, char *heredoc_body) {
 
 int cd_cmd(char **args) {
     if (args[1] == NULL) {
-        fprintf(stderr, "odotettiin argumenttia komennolle \"cd\"\n");
+        // cd ilman argumentteja vie kotihakemistoon
+        if (chdir(getenv("HOME"))) {
+            fprintf(stderr, "kotihakemistoon siirtyminen epäonnistui\n");
+        }
+        //fprintf(stderr, "odotettiin argumenttia komennolle \"cd\"\n");
     } else {
-        if (chdir(args[1]) != 0) {
+        if (chdir(args[1])) {
             fprintf(stderr, "%s: %s: hakemistoa ei löytynyt\n", args[0], args[1]);
         }
     }
@@ -251,7 +289,7 @@ int help_cmd(char **args) {
     printf("Sisäänrakennetut komennot:\n");
 
     for (int i = 0; i < num_builtins(); i++) {
-        printf("[%s]:\t[%s]\n", builtin_str[i], builtin_str_description[i]);
+        printf("%-8s:%5s%s\n", builtin_str[i], " ", builtin_str_description[i]);
     }
 
     return 1;
@@ -295,5 +333,27 @@ int echo_cmd(char **args) {
 
     printf("\n");
 
+    return 1;
+}
+
+int history_cmd(char **args) {
+    (void)args;
+
+    FILE *fptr;
+    fptr = fopen("history.txt", "r");
+
+    if (!fptr) {
+        fprintf(stderr, "tiedostonavaus epäonnistui\n");
+        return 1;
+    }
+
+    char line[1024];
+    size_t index = 1;
+
+    while (fgets(line, sizeof(line), fptr)) {
+        printf("%zu %s", index++, line);
+    }
+
+    fclose(fptr);
     return 1;
 }

@@ -1,4 +1,4 @@
-CC      = gcc
+CC      = clang
 CFLAGS  = -Wall -Wextra -std=c11 -g -Iinclude -fsanitize=address -fno-omit-frame-pointer
 TARGET  = shell
 

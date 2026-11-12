@@ -6,7 +6,6 @@ void run(void) {
     char *host_name = get_host_name();
 
     while (status) {
-
         print_prompt(false, host_name);
 
         char *line = get_input();
@@ -33,7 +32,7 @@ void run(void) {
             char *heredoc_body = NULL;
             int mode;
 
-            for (int i = 0; i < (int)args[i]; i++) {
+            for (int i = 0; args[i] != NULL; i++) {
                 char *op = get_redirection_operator(args[i], &mode);
                 if (!op) {
                     continue;
@@ -124,7 +123,6 @@ void shorten_path(const char *cwd, char *out, size_t size) {
 }
 
 void print_prompt(bool wait_for_input, char *host_name) {
-    // 
     if (wait_for_input) {
             printf("> ");
     } else {

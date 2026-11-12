@@ -27,8 +27,13 @@ char *get_input(void);
 // Pilko syöte
 Parse_Result parse_input(char *input, char **tokens);
 
+// Toteuta heittomerkkien sisällä tapahtuva logiikka
 Parse_Result handle_single_quotes(char *token, char **ptr, size_t *len);
+
+// Toteuta lainausmerkkien sisällä tapahtuva logiikka
 Parse_Result handle_double_quotes(char *token, char **ptr, size_t *len);
+
+// Lue heredoc monirivinen syöte, kunnes delimiter tulee vastaan
 char *read_heredoc(const char *delim);
 
 // Vapauta tokenit, mutta älä itse taulukkoa
