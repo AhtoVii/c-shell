@@ -132,7 +132,7 @@ void print_prompt(bool wait_for_input, char *host_name) {
 
         getcwd(cwd, sizeof cwd);
         shorten_path(cwd, current_dir, sizeof current_dir);
-        printf(GREEN "%s@%s" RESET ":" CYAN "%s" RESET "$ ", user, host_name, current_dir);
+        printf(GREEN "%s@%s" RESET ":" RED "%s" RESET "$ ", user, host_name, current_dir);
     }
 
     fflush(stdout);

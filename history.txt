@@ -21,3 +21,35 @@ ls
 cls
 history
 exit
+exit
+cls
+exit
+ls
+help
+pwd
+exit
+cat test.txt
+cls
+echo abc123
+cat test.txt
+clear
+pwd
+help
+history
+cls
+exit
+echo a
+cat test.txt
+cls
+exit
+help
+echo abc
+cat test123.txt
+echo testi
+cat testi123.txt
+cd ..
+pwd
+cls
+history
+clear
+exit
