@@ -1,68 +1,69 @@
-C-Shell
+# C-Shell
 
 C-kielellä toteutettu komentotulkki (shell), joka mahdollistaa komentojen suorittamisen Unix-ympäristössä. Projektin tavoitteena on toteuttaa komentotulkin keskeinen toimintalogiikka ilman valmiiden komentotulkkien hyödyntämistä.
 
-Ominaisuudet
+## Ominaisuudet
 
-Interaktiivinen komentorivi: Käyttäjä voi syöttää komentoja komentotulkkiin.
+- **Interaktiivinen komentorivi:** Käyttäjä voi syöttää komentoja komentotulkkiin.
+- **Syötteen käsittely:** Komentorivin lukeminen ja komentojen argumenttien jäsentäminen.
+- **Prosessien luonti:** Uusien prosessien käynnistäminen `fork()`- ja `execvp()`-funktioilla.
+- **Prosessien hallinta:** Lapsiprosessien suorituksen odottaminen `waitpid()`-funktiolla.
+- **Dynaaminen muistinhallinta:** Muistin varaaminen ja vapauttaminen komentojen käsittelyn yhteydessä.
 
-Syötteen käsittely: Komentorivin lukeminen ja komentojen argumenttien jäsentäminen.
+## Käytetyt teknologiat
 
-Prosessien luonti: Uusien prosessien käynnistäminen fork()- ja execvp()-funktioilla.
+- **C (C11)**
+- POSIX-järjestelmärajapinnat
+- Clang
+- GNU Make
 
-Prosessien hallinta: Lapsiprosessien suorituksen odottaminen waitpid()-funktiolla.
-
-Dynaaminen muistinhallinta: Muistin varaaminen ja vapauttaminen komentojen käsittelyn yhteydessä.
-
-Käytetyt teknologiat
-
-C (C11)
-
-POSIX-järjestelmärajapinnat
-
-Clang
-
-GNU Make
-
-Vaatimukset
+## Vaatimukset
 
 Projektin kääntäminen ja suorittaminen edellyttää:
 
-Linux- tai muuta POSIX-yhteensopivaa ympäristöä
+- Linux- tai muuta POSIX-yhteensopivaa ympäristöä
+- Clang-kääntäjää
+- GNU Makea
 
-Clang-kääntäjää
-
-GNU Makea
-
-Asennus ja suorittaminen
+## Asennus ja suorittaminen
 
 Kloonaa repositorio:
 
+```bash
 git clone https://github.com/AhtoVii/c-shell.git
 cd c-shell
+```
 
 Käännä projekti:
 
+```bash
 make
+```
 
 Käynnistä komentotulkki:
 
+```bash
 ./shell
+```
 
 Poista käännöksessä syntyneet tiedostot:
 
+```bash
 make clean
+```
 
-Projektin rakenne
+## Projektin rakenne
 
+```text
 c-shell/
 ├── include/       # Otsikkotiedostot
 ├── src/           # Lähdekoodit
 ├── history.txt    # Projektin historia
 ├── steps.txt      # Kehitysvaiheiden muistiinpanot
 └── makefile       # Käännösasetukset
+```
 
-Tavoite
+## Tavoite
 
 Projektin tarkoituksena on syventää ymmärrystä C-ohjelmoinnista, käyttöjärjestelmien toiminnasta, prosessien hallinnasta sekä dynaamisesta muistinhallinnasta.
 
